@@ -366,7 +366,6 @@ typedef void(*p_func)(void);
 #include "m64p_config.h"
 #include "m64p_plugin.h"
 #include "m64p_types.h"
-#include "osal_dynamiclib.h"
 #else
 #if defined(_WIN32)
 #define EXPORT      __declspec(dllexport)

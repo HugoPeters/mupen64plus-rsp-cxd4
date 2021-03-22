@@ -24,16 +24,16 @@
  *   $ ld --shared -o rsp.so -lc rsp.o --strip-all
  */
 
-#include "module.c"
-#include "su.c"
-
-#include "vu/vu.c"
-
-#include "vu/multiply.c"
-#include "vu/add.c"
-#include "vu/select.c"
-#include "vu/logical.c"
-#include "vu/divide.c"
-#if 0
-#include "vu/pack.c"
-#endif
+//#include "module.c"
+//#include "su.c"
+//
+//#include "vu/vu.c"
+//
+//#include "vu/multiply.c"
+//#include "vu/add.c"
+//#include "vu/select.c"
+//#include "vu/logical.c"
+//#include "vu/divide.c"
+//#if 0
+//#include "vu/pack.c"
+//#endif

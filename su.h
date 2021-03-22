@@ -20,7 +20,7 @@
 #include <stdio.h>
 
 #include "my_types.h"
-#include "rsp.h"
+#include "rsp_plugin_cxd4.h"
 
 #define SEMAPHORE_LOCK_CORRECTIONS
 #define WAIT_FOR_CPU_HOST

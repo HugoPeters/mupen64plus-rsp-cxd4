@@ -17,7 +17,7 @@
 #define _MODULE_H_
 
 #include <stdio.h>
-#include "rsp.h"
+#include "rsp_plugin_cxd4.h"
 
 typedef enum {
     M_GFXTASK   = 1,

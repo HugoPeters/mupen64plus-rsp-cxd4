@@ -10,6 +10,10 @@
 #define _RSP_H_INCLUDED__
 
 #include "my_types.h"
+#include "plugin/plugin.h"
+
+// meh
+#define M64P_PLUGIN_API
 
 #if defined(__cplusplus)
 extern "C" {
@@ -147,6 +151,11 @@ typedef struct {
     p_func Enter_RSP_Commands_Window;
     p_func Enter_Memory_Window;
 } DEBUG_INFO;
+
+EXPORT m64p_error CALL RSPLLECXD4_PluginStartup(void *Context,
+    void(*DebugCallback)(void *, int, const char *));
+
+m64p_error RSPLLECXD4_RegisterAPI(rsp_plugin_functions* funcs);
 
 /******************************************************************************
 * name     :  CloseDLL

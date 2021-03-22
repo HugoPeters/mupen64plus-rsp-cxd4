@@ -28,6 +28,9 @@
 #import <CoreFoundation/CoreFoundation.h>
 #endif
 
+#define M64P_PLUGIN_PROTOTYPES 1
+#define M64P_CORE_PROTOTYPES 1
+
 #include "module.h"
 #include "su.h"
 
@@ -73,15 +76,6 @@ static m64p_handle l_ConfigRsp;
 
 #define VERSION_PRINTF_SPLIT(x) (((x) >> 16) & 0xffff), (((x) >> 8) & 0xff), ((x) & 0xff)
 
-ptr_ConfigOpenSection      ConfigOpenSection = NULL;
-ptr_ConfigDeleteSection    ConfigDeleteSection = NULL;
-ptr_ConfigSetParameter     ConfigSetParameter = NULL;
-ptr_ConfigGetParameter     ConfigGetParameter = NULL;
-ptr_ConfigSetDefaultFloat  ConfigSetDefaultFloat;
-ptr_ConfigSetDefaultBool   ConfigSetDefaultBool = NULL;
-ptr_ConfigGetParamBool     ConfigGetParamBool = NULL;
-ptr_CoreDoCommand          CoreDoCommand = NULL;
-
 NOINLINE void update_conf(const char* source)
 {
     memset(conf, 0, 32);
@@ -112,11 +106,9 @@ void DebugMessage(int level, const char *message, ...)
   va_end(args);
 }
 
-EXPORT m64p_error CALL PluginStartup(m64p_dynlib_handle CoreLibHandle, void *Context,
+EXPORT m64p_error CALL RSPLLECXD4_PluginStartup(void *Context,
                                      void (*DebugCallback)(void *, int, const char *))
 {
-    ptr_CoreGetAPIVersions CoreAPIVersionFunc;
-
     int ConfigAPIVersion, DebugAPIVersion, VidextAPIVersion;
     float fConfigParamsVersion = 0.0f;
 
@@ -128,34 +120,13 @@ EXPORT m64p_error CALL PluginStartup(m64p_dynlib_handle CoreLibHandle, void *Con
     l_DebugCallContext = Context;
 
     /* attach and call the CoreGetAPIVersions function, check Config API version for compatibility */
-    CoreAPIVersionFunc = (ptr_CoreGetAPIVersions) osal_dynlib_getproc(CoreLibHandle, "CoreGetAPIVersions");
-    if (CoreAPIVersionFunc == NULL)
-    {
-        DebugMessage(M64MSG_ERROR, "Core emulator broken; no CoreAPIVersionFunc() function found.");
-        return M64ERR_INCOMPATIBLE;
-    }
-
-    (*CoreAPIVersionFunc)(&ConfigAPIVersion, &DebugAPIVersion, &VidextAPIVersion, NULL);
+    CoreGetAPIVersions(&ConfigAPIVersion, &DebugAPIVersion, &VidextAPIVersion, NULL);
     if ((ConfigAPIVersion & 0xffff0000) != (CONFIG_API_VERSION & 0xffff0000))
     {
         DebugMessage(M64MSG_ERROR, "Emulator core Config API (v%i.%i.%i) incompatible with plugin (v%i.%i.%i)",
                 VERSION_PRINTF_SPLIT(ConfigAPIVersion), VERSION_PRINTF_SPLIT(CONFIG_API_VERSION));
         return M64ERR_INCOMPATIBLE;
     }
-
-    /* Get the core config function pointers from the library handle */
-    ConfigOpenSection = (ptr_ConfigOpenSection) osal_dynlib_getproc(CoreLibHandle, "ConfigOpenSection");
-    ConfigDeleteSection = (ptr_ConfigDeleteSection) osal_dynlib_getproc(CoreLibHandle, "ConfigDeleteSection");
-    ConfigSetParameter = (ptr_ConfigSetParameter) osal_dynlib_getproc(CoreLibHandle, "ConfigSetParameter");
-    ConfigGetParameter = (ptr_ConfigGetParameter) osal_dynlib_getproc(CoreLibHandle, "ConfigGetParameter");
-    ConfigSetDefaultFloat = (ptr_ConfigSetDefaultFloat) osal_dynlib_getproc(CoreLibHandle, "ConfigSetDefaultFloat");
-    ConfigSetDefaultBool = (ptr_ConfigSetDefaultBool) osal_dynlib_getproc(CoreLibHandle, "ConfigSetDefaultBool");
-    ConfigGetParamBool = (ptr_ConfigGetParamBool) osal_dynlib_getproc(CoreLibHandle, "ConfigGetParamBool");
-    CoreDoCommand = (ptr_CoreDoCommand) osal_dynlib_getproc(CoreLibHandle, "CoreDoCommand");
-
-    if (!ConfigOpenSection || !ConfigDeleteSection || !ConfigSetParameter || !ConfigGetParameter ||
-        !ConfigSetDefaultBool || !ConfigGetParamBool || !ConfigSetDefaultFloat)
-        return M64ERR_INCOMPATIBLE;
 
     /* get a configuration section handle */
     if (ConfigOpenSection("rsp-cxd4", &l_ConfigRsp) != M64ERR_SUCCESS)
@@ -201,7 +172,7 @@ EXPORT m64p_error CALL PluginStartup(m64p_dynlib_handle CoreLibHandle, void *Con
     return M64ERR_SUCCESS;
 }
 
-EXPORT m64p_error CALL PluginShutdown(void)
+EXPORT m64p_error CALL RSPLLECXD4_PluginShutdown(void)
 {
     if (!l_PluginInit)
         return M64ERR_NOT_INIT;
@@ -210,7 +181,7 @@ EXPORT m64p_error CALL PluginShutdown(void)
     return M64ERR_SUCCESS;
 }
 
-EXPORT m64p_error CALL PluginGetVersion(m64p_plugin_type *PluginType, int *PluginVersion, int *APIVersion, const char **PluginNamePtr, int *Capabilities)
+EXPORT m64p_error CALL RSPLLECXD4_PluginGetVersion(m64p_plugin_type *PluginType, int *PluginVersion, int *APIVersion, const char **PluginNamePtr, int *Capabilities)
 {
     /* set version info */
     if (PluginType != NULL)
@@ -363,7 +334,7 @@ EXPORT void CALL DllConfig(p_void hParent)
 
 #endif
 
-EXPORT unsigned int CALL DoRspCycles(unsigned int cycles)
+EXPORT unsigned int CALL RSPLLECXD4_DoRspCycles(unsigned int cycles)
 {
     static char task_debug[] = "unknown task type:  0x????????";
     char* task_debug_type;
@@ -519,7 +490,7 @@ void no_LLE(void)
     already_warned = TRUE;
     return;
 }
-EXPORT void CALL InitiateRSP(RSP_INFO Rsp_Info, pu32 CycleCount)
+EXPORT void CALL RSPLLECXD4_InitiateRSP(RSP_INFO Rsp_Info, pu32 CycleCount)
 {
     int recovered_from_exception;
 
@@ -743,19 +714,27 @@ void export_SP_memory(void)
  * messages and unused initializer functions out of the plugin binary.
  */
 #ifdef _WIN32
-BOOL WINAPI
-DllMain(HINSTANCE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
-{
-    hModule = lpReserved = NULL; /* unused */
-    switch (ul_reason_for_call) {
-    case 1:  /* DLL_PROCESS_ATTACH */
-    case 2:  /* DLL_THREAD_ATTACH */
-    case 3:  /* DLL_THREAD_DETACH */
-    case 0:  /* DLL_PROCESS_DETACH */
-        break;
-    default:
-        message("Unknown reason for call.");
-    }
-    return TRUE;
-}
+//BOOL WINAPI
+//DllMain(HINSTANCE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
+//{
+//    hModule = lpReserved = NULL; /* unused */
+//    switch (ul_reason_for_call) {
+//    case 1:  /* DLL_PROCESS_ATTACH */
+//    case 2:  /* DLL_THREAD_ATTACH */
+//    case 3:  /* DLL_THREAD_DETACH */
+//    case 0:  /* DLL_PROCESS_DETACH */
+//        break;
+//    default:
+//        message("Unknown reason for call.");
+//    }
+//    return TRUE;
+//}
 #endif
+
+m64p_error RSPLLECXD4_RegisterAPI(rsp_plugin_functions* funcs)
+{
+    funcs->initiateRSP = RSPLLECXD4_InitiateRSP;
+    funcs->getVersion = RSPLLECXD4_PluginGetVersion;
+    funcs->doRspCycles = RSPLLECXD4_DoRspCycles;
+    funcs->romClosed = RSPLLECXD4_PluginShutdown;
+}
