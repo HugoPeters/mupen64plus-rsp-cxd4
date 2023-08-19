@@ -334,8 +334,15 @@ EXPORT void CALL DllConfig(p_void hParent)
 
 #endif
 
+int rspFrameSkip = 10;
+int rspNumFrames = 0;
+
 EXPORT unsigned int CALL RSPLLECXD4_DoRspCycles(unsigned int cycles)
 {
+	rspNumFrames = (rspNumFrames + 1) % rspFrameSkip;
+	if (rspNumFrames != 0)
+		return;
+
     static char task_debug[] = "unknown task type:  0x????????";
     char* task_debug_type;
     OSTask_type task_type;
